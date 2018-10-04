@@ -23,5 +23,5 @@ void ball::update(float deltaTime)
 
 void ball::draw()
 {
-	DrawCircle(pos.x, pos.y, radius, LIME);
+	DrawCircle(pos.x, pos.y, radius, RED);
 }

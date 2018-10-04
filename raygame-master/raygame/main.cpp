@@ -12,6 +12,7 @@
 #include "raylib.h"
 #include "ball.h"
 #include "pickUP.h"
+#include "AI.h"
 #include <iostream>
 #include <string>
 #include <ctime>
@@ -29,61 +30,87 @@ int main()
 
 	ball player;
 	player.pos = { 100, 100 };
-	player.radius = 10.0f;
-	player.speed = 70.0f;
-
+	player.radius = 5.0f;
+	player.speed = 40.0f;
+	
 	srand((unsigned int)time(NULL));
 
-	pickup pickUps[3] =
+	ai ai[10];
+
+	for (size_t i = 0; i < 10; ++i) // randomly spawning ai
 	{
-		{{rand() % 750, rand() % 400}, 5.0f, 1, true},
-		{{ rand() % 750, rand() % 400 }, 5.0f, 1, true},
-		{{rand() % 750, rand() % 400 }, 5.0f, 1, true}
-	};
+		Vector2 tmp = { (float)(rand() % 750), (float)(rand() % 400) };
+		ai[i] = { tmp, 5.0f, 40.0f};
+	}
+
+	pickup smallPickUps[250];
+	//pickup largePickUps[25];
+
+	for (size_t i = 0; i < 250; ++i) // randomly spawning small food
+	{
+		smallPickUps[i] = {{ (float)(rand() % 750), (float)(rand() % 400) }, 1.0f, 1, true };
+	}
+	/*for (size_t i = 0; i < 25; ++i) // randomly spawning large food
+	{
+		largePickUps[i] = { { (float)(rand() % 750), (float)(rand() % 400) }, 2.0f, 5, true };
+	}*/
 	//--------------------------------------------------------------------------------------
 
 	int score = 0;
+	bool gameOn = true;
 
 	// Main game loop
-	while (!WindowShouldClose())    // Detect window close button or ESC key
+	while (gameOn)  
 	{
+
 		// Update
 		//----------------------------------------------------------------------------------
 		player.update(GetFrameTime());
 
-		float randomWidth = rand() % 750;
-		float randomHeight = rand() % 400;
-		for (size_t i = 0; i < 3; i++)
-		{
-			if (pickUps[i].enabled && CheckCollisionCircles(player.pos, player.radius, pickUps[i].pos, pickUps[i].radius))
-			{
-				pickUps[i].enabled = false;
-				score++;
+		float randomWidth = (float)(rand() % 750);
+		float randomHeight = (float)(rand() % 400);
 
-				pickUps[i] = { { randomWidth, randomHeight }, 5.0f, 1, true };
+		for (size_t i = 0; i < 250; i++) // small food
+		{
+			if (smallPickUps[i].enabled && CheckCollisionCircles(player.pos, player.radius, smallPickUps[i].pos, smallPickUps[i].radius))
+			{
+				smallPickUps[i].enabled = false;
+				score++;
+				player.speed -= .01;
+				player.radius += .01;
+
+				smallPickUps[i] = { { randomWidth, randomHeight }, 1.0f, 1, true };
 			}
 		}
-		if (player.pos.y > screenHeight || player.pos.y < 0) 
+		/*for (size_t i = 0; i < 25; i++) // large food
 		{
-			if (player.pos.y > 400)
+			if (largePickUps[i].enabled && CheckCollisionCircles(player.pos, player.radius, largePickUps[i].pos, largePickUps[i].radius))
 			{
-				player.pos.y = 0;
+				largePickUps[i].enabled = false;
+				score += 5;
+				player.speed -= .05;
+				player.radius += .05;
+
+				largePickUps[i] = { { randomWidth, randomHeight }, 2.0f, 5, true };
 			}
-			else
-			{
-				player.pos.y = screenHeight;
-			}
+		}*/
+
+		if (player.pos.y > screenHeight + player.radius) // screen wrapping
+		{	
+			player.pos.y = -player.radius;
 		}
-		if (player.pos.x > screenWidth || player.pos.x <= 0) 
+		else if(player.pos.y < -player.radius)
 		{
-			if (player.pos.x > 225)
-			{
-				player.pos.x = 0;
-			}
-			else
-			{
-				player.pos.x = screenWidth;
-			}
+			player.pos.y = screenHeight + player.radius;
+		}
+
+		if (player.pos.x > screenWidth + player.radius)
+		{
+			player.pos.x = -player.radius;
+		}
+		else if (player.pos.x < -player.radius)
+		{
+			player.pos.x = screenWidth + player.radius;
 		}
 		//----------------------------------------------------------------------------------
 
@@ -93,16 +120,24 @@ int main()
 
 		ClearBackground(BLACK);
 
-		DrawText("Congrats! You created your first window!", 190, 200, 20, LIGHTGRAY);
+		//DrawText("Congrats! You created your first window!", 190, 200, 20, LIGHTGRAY);
 
-		for (size_t i = 0; i < 3; i++)
+		for (size_t i = 0; i < 250; i++)
 		{
-			pickUps[i].draw();
+			smallPickUps[i].draw();
 		}
+		/*for (size_t i = 0; i < 25; i++)
+		{
+			largePickUps[i].draw();
+		}*/
 
 		player.draw();
+		for (size_t i = 0; i < 10; i++)
+		{
+			ai[i].draw();
+		}
 
-		DrawText(std::to_string(score).c_str(), 600, 100, 25, RED);
+		DrawText(std::to_string(score).c_str(), 600, 75, 25, RED);
 
 		EndDrawing();
 		//----------------------------------------------------------------------------------

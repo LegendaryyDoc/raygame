@@ -2,6 +2,7 @@
 #include "AI.h"
 #include "raylib.h"
 #include <ctime>
+#include <cmath>
 
 int ai::findStar(pickup arr[])
 {
@@ -31,7 +32,8 @@ int ai::findStar(pickup arr[])
 		offsetX = aiX - currentX;
 		offsetY = aiY - currentY;
 
-		currentTargetDistance = (((offsetX ^ 2) + (offsetY ^ 2)) ^ 1/2); // a^2 + b^2 = c^2
+		currentTargetDistance = (((offsetX * offsetX) + (offsetY * offsetY))); // a^2 + b^2 = c^2
+		currentTargetDistance = sqrtf(currentTargetDistance);
 
 		if (currentTargetDistance > nearestDistance) // current target is closer then nearest target 
 		{

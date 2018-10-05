@@ -25,16 +25,20 @@ int main()
 	//--------------------------------------------------------------------------------------
 	int screenWidth = 800;
 	int screenHeight = 450;
-	static  int AIMax = 1;
+	static  int AIMax = 10;
 	
 	InitWindow(screenWidth, screenHeight, "raylib [core] example - basic window");
 
 	SetTargetFPS(60);
 
 	ball player;
-	player.pos = { 100, 100 };
+
+	Vector2 tmpPos = { (float)(rand() % 750), (float)(rand() % 400) };
+
+	player.pos = tmpPos;
 	player.radius = 5.0f;
 	player.speed = 40.0f;
+	player.enabled = true;
 	
 	srand((unsigned int)time(NULL));
 
@@ -42,75 +46,151 @@ int main()
 
 	for (size_t i = 0; i < AIMax; ++i) // randomly spawning ai
 	{
-		Vector2 tmp = { (float)(rand() % 750), (float)(rand() % 400) };
-		ai[i] = { tmp, 5.0f, 1.0f};
+		Vector2 tmp = { (float)(rand() % 750), (float)(rand() % 400)};
+		ai[i] = { tmp, 5.0f, 0.65f, true};
 	}
 
 	pickup smallPickUps[250];
-	//pickup largePickUps[25];
 
 	for (size_t i = 0; i < PickupMax; ++i) // randomly spawning small food
 	{
 		smallPickUps[i] = {{ (float)(rand() % 750), (float)(rand() % 400) }, 1.0f, 1, true };
-
-		//smallPickUps[i] = { 500,300, 1.0f,1,true };
 	}
-	/*for (size_t i = 0; i < 25; ++i) // randomly spawning large food
-	{
-		largePickUps[i] = { { (float)(rand() % 750), (float)(rand() % 400) }, 2.0f, 5, true };
-	}*/
+
 	//--------------------------------------------------------------------------------------
 
-	int score = 0;
+	int playerScore = 0;
+	int aiScore[10] = {};
 	bool gameOn = true;
 
+	for (size_t i = 0; i < AIMax; i++) 
+	{
+		ai[i].findStar(smallPickUps, PickupMax);
+	}
 	// Main game loop
 	while (gameOn)  
 	{
-
-		// Update
-		//----------------------------------------------------------------------------------
 		player.update(GetFrameTime());
-		ai->findStar(smallPickUps,PickupMax,true);
 
 		float randomWidth = (float)(rand() % 750);
 		float randomHeight = (float)(rand() % 400);
 
+		/*----------------------------------------------------------------------------------*/
+		/*		Collision with Star		*/
+
 		for (size_t i = 0; i < PickupMax; i++) // small food
 		{
-			if (smallPickUps[i].enabled && CheckCollisionCircles(player.pos, player.radius, smallPickUps[i].pos, smallPickUps[i].radius))
+			if (smallPickUps[i].enabled && CheckCollisionCircles(player.pos, player.radius, smallPickUps[i].pos, smallPickUps[i].radius)) // player collision with a star
 			{
-				smallPickUps[i].enabled = false;
-				score++;
+				smallPickUps[i].enabled = false; // despawning the star
+				playerScore++;
 				player.speed -= .01;
 				player.radius += .01;
 
-				smallPickUps[i] = { { (float)(rand() % 750), (float)(rand() % 400) }, 1.0f, 1, true };
+				smallPickUps[i] = { { (float)(rand() % 750), (float)(rand() % 400) }, 1.0f, 1, true }; // respawning the star
+
+				for (size_t j = 0; j < AIMax; j++)
+				{
+					ai[j].findStar(smallPickUps, PickupMax);
+				}
 			}
-			if (smallPickUps[i].enabled && CheckCollisionCircles(ai->pos, ai->radius, smallPickUps[i].pos, smallPickUps[i].radius))
+			for (size_t j2 = 0; j2 < AIMax; j2++)
 			{
-				smallPickUps[i].enabled = false;
-				score++;
-				ai->speed -= .001;
-				ai->radius += .001;
+				if (smallPickUps[i].enabled && CheckCollisionCircles(ai[j2].pos, ai[j2].radius, smallPickUps[i].pos, smallPickUps[i].radius)) // ai collision with a star
+				{
+						smallPickUps[i].enabled = false; // despawning the star
+						aiScore[j2]++;
+						ai[j2].speed -= .0001;
+						ai[j2].radius += .01;
+						smallPickUps[i] = { { (float)(rand() % 750), (float)(rand() % 400) }, 1.0f, 1, true }; // respawning the star
 
-				ai->findStar(smallPickUps, PickupMax, false);
-
-				smallPickUps[i] = { { (float)(rand() % 750), (float)(rand() % 400) }, 1.0f, 1, true };
+						for (size_t j = 0; j < AIMax; j++) 
+						{
+							ai[j].findStar(smallPickUps, PickupMax);
+						}
+				}
 			}
 		}
-		/*for (size_t i = 0; i < 25; i++) // large food
-		{
-			if (largePickUps[i].enabled && CheckCollisionCircles(player.pos, player.radius, largePickUps[i].pos, largePickUps[i].radius))
-			{
-				largePickUps[i].enabled = false;
-				score += 5;
-				player.speed -= .05;
-				player.radius += .05;
 
-				largePickUps[i] = { { randomWidth, randomHeight }, 2.0f, 5, true };
+		/*----------------------------------------------------------------------------------*/
+		/*		Player and AI Killing		*/
+
+		for (size_t i = 0; i < AIMax; i++)
+		{
+			std::cout << ai[i].speed << std::endl;
+
+			if (ai[i].enabled && CheckCollisionCircles(player.pos, player.radius, ai[i].pos, ai[i].radius)) // checking collision between player and ai
+			{
+				if (playerScore > aiScore[i]) // if player score is higher
+				{
+					ai[i].enabled = false; // killing the ai
+					playerScore = playerScore + aiScore[i];
+					player.speed = (player.speed -(0.65f - ai[i].speed));
+					player.radius = (player.radius +(ai[i].radius - 5.0f));
+
+					aiScore[i] = 0; // reseting stats and score
+					ai[i].speed = 0.65f;
+					ai[i].radius = 5.0f;
+
+					Vector2 tmp = { (float)(rand() % 750), (float)(rand() % 400) }; // respawning ai
+					ai[i] = { tmp, 5.0f, 0.65f, true };
+				}
+				else if(playerScore < aiScore[i]) // if players score is lower
+				{
+					player.enabled = false; // killing player
+					aiScore[i] = playerScore + aiScore[i];
+					ai[i].speed = (ai[i].speed - (40.0f - player.speed));
+					ai[i].radius = (ai[i].radius + (player.radius - 5.0f));
+
+					playerScore = 0; // reseting sats
+					player.speed = 40.0f;
+					player.radius = 5.0f;
+
+					Vector2 tmpPos = { (float)(rand() % 750), (float)(rand() % 400) }; // respawning player
+					player.pos = tmpPos;
+					player.radius = 5.0f;
+					player.speed = 40.0f;
+					player.enabled = true;
+				}
+		}
+		for (size_t j = 0; j < AIMax; j++)
+		{
+			if (CheckCollisionCircles(ai[j].pos, ai[j].radius, ai[i].pos, ai[i].radius))
+			{
+				if (aiScore[i] > aiScore[j]) // one ai has more score then other ai
+				{
+					ai[j].enabled = false; // kills ai 
+					aiScore[i] = aiScore[j] + aiScore[i];
+					ai[i].speed = (ai[i].speed - (0.65f - ai[j].speed));
+					ai[i].radius = (ai[i].radius + (ai[j].radius - 5.0f));
+
+					aiScore[j] = 0; // reseting stats and score
+					ai[j].speed = 0.65f;
+					ai[j].radius = 5.0f;
+
+					Vector2 tmp = { (float)(rand() % 750), (float)(rand() % 400) }; // respawning ai
+					ai[j] = { tmp, 5.0f, 0.65f, true };
+
+				}
+				else if (aiScore[j] > aiScore[i])
+				{
+					ai[i].enabled = false; // kills ai
+					aiScore[j] = aiScore[i] + aiScore[j];
+					ai[j].speed = (ai[j].speed - (40.0f - ai[i].speed));
+					ai[j].radius = (ai[j].radius + (ai[i].radius - 5.0f));
+
+					aiScore[i] = 0; // reseting stats and score
+					ai[i].speed = 0.65f;
+					ai[i].radius = 5.0f;
+
+					Vector2 tmp = { (float)(rand() % 750), (float)(rand() % 400) }; // respawning ai
+					ai[i] = { tmp, 5.0f, 0.65f, true };
+				}
 			}
-		}*/
+		}
+	}
+		/*----------------------------------------------------------------------------------*/
+		/*		Wrapping the screen		*/	
 
 		if (player.pos.y > screenHeight + player.radius) // screen wrapping
 		{	
@@ -129,6 +209,27 @@ int main()
 		{
 			player.pos.x = screenWidth + player.radius;
 		}
+
+		for (size_t i = 0; i < AIMax; i++)
+		{
+			if (ai[i].pos.y > screenHeight + player.radius) // screen wrapping
+			{
+				ai[i].pos.y = -player.radius;
+			}
+			else if (ai[i].pos.y < -player.radius)
+			{
+				ai[i].pos.y = screenHeight + player.radius;
+			}
+
+			if (ai[i].pos.x > screenWidth + player.radius)
+			{
+				ai[i].pos.x = -player.radius;
+			}
+			else if (ai[i].pos.x < -player.radius)
+			{
+				ai[i].pos.x = screenWidth + player.radius;
+			}
+		}
 		//----------------------------------------------------------------------------------
 
 		// Draw
@@ -143,18 +244,15 @@ int main()
 		{
 			smallPickUps[i].draw();
 		}
-		/*for (size_t i = 0; i < 25; i++)
-		{
-			largePickUps[i].draw();
-		}*/
 
 		player.draw();
+
 		for (size_t i = 0; i < AIMax; i++)
 		{
 			ai[i].draw();
 		}
 
-		DrawText(std::to_string(score).c_str(), 600, 75, 25, RED);
+		DrawText(std::to_string(playerScore).c_str(), 600, 75, 25, RED); // displaying player score
 
 		EndDrawing();
 		//----------------------------------------------------------------------------------

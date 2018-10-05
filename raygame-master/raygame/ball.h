@@ -9,6 +9,8 @@ public:
 
 	float speed;
 
+	bool enabled;
+
 	void update(float deltaTime);
 	void draw();
 };

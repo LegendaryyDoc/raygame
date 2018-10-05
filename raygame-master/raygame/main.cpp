@@ -84,8 +84,8 @@ int main()
 			{
 				smallPickUps[i].enabled = false; // despawning the star
 				playerScore++;
-				player.speed -= .01;
-				player.radius += .01;
+				player.speed -= 0.005f;
+				player.radius += 0.01f;
 
 				smallPickUps[i] = { { (float)(rand() % 750), (float)(rand() % 400) }, 1.0f, 1, true }; // respawning the star
 
@@ -100,8 +100,8 @@ int main()
 				{
 						smallPickUps[i].enabled = false; // despawning the star
 						aiScore[j2]++;
-						ai[j2].speed -= .0001;
-						ai[j2].radius += .01;
+						ai[j2].speed -= 0.0001f;
+						ai[j2].radius += 0.01f;
 						smallPickUps[i] = { { (float)(rand() % 750), (float)(rand() % 400) }, 1.0f, 1, true }; // respawning the star
 
 						for (size_t j = 0; j < AIMax; j++) 
@@ -117,7 +117,6 @@ int main()
 
 		for (size_t i = 0; i < AIMax; i++)
 		{
-			std::cout << ai[i].speed << std::endl;
 
 			if (ai[i].enabled && CheckCollisionCircles(player.pos, player.radius, ai[i].pos, ai[i].radius)) // checking collision between player and ai
 			{
@@ -125,7 +124,12 @@ int main()
 				{
 					ai[i].enabled = false; // killing the ai
 					playerScore = playerScore + aiScore[i];
-					player.speed = (player.speed -(0.65f - ai[i].speed));
+
+					for (size_t k = 0; k < (int)(aiScore[i]); k++) // changing player speed
+					{
+						player.speed -= 0.005f;
+					}
+
 					player.radius = (player.radius +(ai[i].radius - 5.0f));
 
 					aiScore[i] = 0; // reseting stats and score
@@ -135,11 +139,17 @@ int main()
 					Vector2 tmp = { (float)(rand() % 750), (float)(rand() % 400) }; // respawning ai
 					ai[i] = { tmp, 5.0f, 0.65f, true };
 				}
+
 				else if(playerScore < aiScore[i]) // if players score is lower
 				{
 					player.enabled = false; // killing player
 					aiScore[i] = playerScore + aiScore[i];
-					ai[i].speed = (ai[i].speed - (40.0f - player.speed));
+
+					for (size_t j = 0; j < playerScore; j++) // changing ai speed
+					{
+						ai[i].speed -= .0001;
+					}
+
 					ai[i].radius = (ai[i].radius + (player.radius - 5.0f));
 
 					playerScore = 0; // reseting sats
@@ -176,7 +186,7 @@ int main()
 				{
 					ai[i].enabled = false; // kills ai
 					aiScore[j] = aiScore[i] + aiScore[j];
-					ai[j].speed = (ai[j].speed - (40.0f - ai[i].speed));
+					ai[j].speed = (ai[j].speed - (0.65f - ai[i].speed));
 					ai[j].radius = (ai[j].radius + (ai[i].radius - 5.0f));
 
 					aiScore[i] = 0; // reseting stats and score

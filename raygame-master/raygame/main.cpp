@@ -17,13 +17,16 @@
 #include <string>
 #include <ctime>
 
+static int PickupMax = 250;
+
 int main()
 {
 	// Initialization
 	//--------------------------------------------------------------------------------------
 	int screenWidth = 800;
 	int screenHeight = 450;
-
+	static  int AIMax = 1;
+	
 	InitWindow(screenWidth, screenHeight, "raylib [core] example - basic window");
 
 	SetTargetFPS(60);
@@ -37,18 +40,20 @@ int main()
 
 	ai ai[10];
 
-	for (size_t i = 0; i < 10; ++i) // randomly spawning ai
+	for (size_t i = 0; i < AIMax; ++i) // randomly spawning ai
 	{
 		Vector2 tmp = { (float)(rand() % 750), (float)(rand() % 400) };
-		ai[i] = { tmp, 5.0f, 40.0f};
+		ai[i] = { tmp, 5.0f, 1.0f};
 	}
 
 	pickup smallPickUps[250];
 	//pickup largePickUps[25];
 
-	for (size_t i = 0; i < 250; ++i) // randomly spawning small food
+	for (size_t i = 0; i < PickupMax; ++i) // randomly spawning small food
 	{
 		smallPickUps[i] = {{ (float)(rand() % 750), (float)(rand() % 400) }, 1.0f, 1, true };
+
+		//smallPickUps[i] = { 500,300, 1.0f,1,true };
 	}
 	/*for (size_t i = 0; i < 25; ++i) // randomly spawning large food
 	{
@@ -66,11 +71,12 @@ int main()
 		// Update
 		//----------------------------------------------------------------------------------
 		player.update(GetFrameTime());
+		ai->findStar(smallPickUps,PickupMax,true);
 
 		float randomWidth = (float)(rand() % 750);
 		float randomHeight = (float)(rand() % 400);
 
-		for (size_t i = 0; i < 250; i++) // small food
+		for (size_t i = 0; i < PickupMax; i++) // small food
 		{
 			if (smallPickUps[i].enabled && CheckCollisionCircles(player.pos, player.radius, smallPickUps[i].pos, smallPickUps[i].radius))
 			{
@@ -79,7 +85,18 @@ int main()
 				player.speed -= .01;
 				player.radius += .01;
 
-				smallPickUps[i] = { { randomWidth, randomHeight }, 1.0f, 1, true };
+				smallPickUps[i] = { { (float)(rand() % 750), (float)(rand() % 400) }, 1.0f, 1, true };
+			}
+			if (smallPickUps[i].enabled && CheckCollisionCircles(ai->pos, ai->radius, smallPickUps[i].pos, smallPickUps[i].radius))
+			{
+				smallPickUps[i].enabled = false;
+				score++;
+				ai->speed -= .001;
+				ai->radius += .001;
+
+				ai->findStar(smallPickUps, PickupMax, false);
+
+				smallPickUps[i] = { { (float)(rand() % 750), (float)(rand() % 400) }, 1.0f, 1, true };
 			}
 		}
 		/*for (size_t i = 0; i < 25; i++) // large food
@@ -122,7 +139,7 @@ int main()
 
 		//DrawText("Congrats! You created your first window!", 190, 200, 20, LIGHTGRAY);
 
-		for (size_t i = 0; i < 250; i++)
+		for (size_t i = 0; i < PickupMax; i++)
 		{
 			smallPickUps[i].draw();
 		}
@@ -132,7 +149,7 @@ int main()
 		}*/
 
 		player.draw();
-		for (size_t i = 0; i < 10; i++)
+		for (size_t i = 0; i < AIMax; i++)
 		{
 			ai[i].draw();
 		}

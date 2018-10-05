@@ -11,6 +11,6 @@ public:
 
 	float speed;
 
-	int findStar(pickup arr[]);
+	int findStar(pickup arr[],int PickupMax, bool starEat);
 	void draw();
 };
